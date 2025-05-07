@@ -11,8 +11,6 @@ from werkzeug.security import generate_password_hash
 from io import BytesIO
 import zipfile
 import csv
-from sqlalchemy import func
-from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
@@ -2787,3 +2785,4 @@ def feed_reports():
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
     app.run(debug=True)
+    app.run( debug=True, host="172.19.131.138" , port="5000")
