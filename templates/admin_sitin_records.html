@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sit-In Records - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin-sitin-records.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        /* Search Modal Styles */
+        .search-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .search-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .student-info {
+            flex: 1;
+        }
+
+        .student-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .student-id {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .student-course {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-text">UC Main Sit-In</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" onclick="toggleSearch()"><i class="fas fa-search"></i> Search</a>
+            </li>
+            <li><a href="{{ url_for('admin_students') }}"><i class="fas fa-users"></i> Students</a></li>
+            <li><a href="{{ url_for('admin_sitin') }}"><i class="fas fa-chair"></i> Sit-In</a></li>
+            <li><a href="{{ url_for('admin_sitin_records') }}" class="active"><i class="fas fa-history"></i> View Sit-in Records</a></li>
+            <li><a href="{{ url_for('admin_sitin_report') }}"><i class="fas fa-chart-bar"></i> Sit-in Report</a></li>
+            <li><a href="{{ url_for('admin_leaderboard') }}"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">More Options</span>
+            <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('upload_lab_schedule') }}"><i class="fas fa-upload"></i> Upload Lab Schedule</a></li>
+            <li><a href="{{ url_for('upload_resources') }}"><i class="fas fa-file-upload"></i> Upload Resources/Materials</a></li>
+        </ul>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="search-modal">
+        <div class="search-modal-content">
+            <span class="close" onclick="toggleSearch()">&times;</span>
+            <h2>Search Students</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search by name or ID...">
+                <button onclick="searchStudents()"><i class="fas fa-search"></i> Search</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h2>Sit-In Records</h2>
+            <div class="filter-section">
+                <select id="courseFilter">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course }}" {% if course == current_course %}selected{% endif %}>{{ course }}</option>
+                    {% endfor %}
+                </select>
+                <select id="yearFilter">
+                    <option value="">All Year Levels</option>
+                    {% for year in year_levels %}
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="startDate" placeholder="Start Date" class="flatpickr" value="{{ start_date or '' }}">
+                <input type="text" id="endDate" placeholder="End Date" class="flatpickr" value="{{ end_date or '' }}">
+                <button onclick="applyFilters()" class="filter-btn">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                <button onclick="exportRecords()" class="export-btn">
+                    <i class="fas fa-download"></i> Export to CSV
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID Number</th>
+                        <th>Student Name</th>
+                        <th>Course</th>
+                        <th>Year Level</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Computer Laboratory</th>
+                        <th>Programming Language</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record.idno }}</td>
+                        <td>{{ record.firstname }} {{ record.lastname }}</td>
+                        <td>{{ record.course }}</td>
+                        <td>{{ record.year_level }}</td>
+                        <td>{{ record.date }}</td>
+                        <td>{{ record.time }}</td>
+                        <td>{{ record.session_type }}</td>
+                        <td>{{ record.language }}</td>
+                        <td>
+                            <span class="status-badge {{ record.status.lower() }}">
+                                {{ record.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            {% if has_prev %}
+            <button onclick="changePage('{{ page - 1 }}')" class="page-btn">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            {% endif %}
+            <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+            {% if has_next %}
+            <button onclick="changePage('{{ page + 1 }}')" class="page-btn">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('detailsModal')">&times;</span>
+            <h2>Record Details</h2>
+            <div id="recordDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date pickers
+        flatpickr(".flatpickr", {
+            dateFormat: "Y-m-d"
+        });
+
+        function applyFilters() {
+            const course = document.getElementById('courseFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            window.location.href = `{{ url_for('admin_sitin_records') }}?course=${course}&year_level=${year}&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        function changePage(page) {
+            const course = document.getElementById('courseFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            window.location.href = `{{ url_for('admin_sitin_records') }}?page=${page}&course=${course}&year_level=${year}&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        function viewDetails(id) {
+            fetch(`/admin/sitin-records/view/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('recordDetails').innerHTML = `
+                        <div class="details-grid">
+                            <p><strong>Student:</strong> ${data.student_name}</p>
+                            <p><strong>ID Number:</strong> ${data.idno}</p>
+                            <p><strong>Course:</strong> ${data.course}</p>
+                            <p><strong>Year Level:</strong> ${data.year_level}</p>
+                            <p><strong>Date:</strong> ${data.date}</p>
+                            <p><strong>Time:</strong> ${data.time}</p>
+                            <p><strong>Computer Laboratory:</strong> ${data.session_type}</p>
+                            <p><strong>Programming Language:</strong> ${data.language}</p>
+                            <p><strong>Status:</strong> ${data.status}</p>
+                            <p><strong>Created At:</strong> ${data.created_at}</p>
+                        </div>
+                    `;
+                    document.getElementById('detailsModal').style.display = 'block';
+                });
+        }
+
+        function exportRecords() {
+            const course = document.getElementById('courseFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            window.location.href = `{{ url_for('export_sitin_records') }}?course=${course}&year_level=${year}&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function toggleSearch() {
+            const modal = document.getElementById('searchModal');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            if (modal.style.display === 'block') {
+                document.getElementById('searchInput').focus();
+            }
+        }
+
+        async function searchStudents() {
+            const searchInput = document.getElementById('searchInput').value;
+            if (!searchInput.trim()) return;
+
+            try {
+                const response = await fetch(`/admin/search-students?query=${encodeURIComponent(searchInput)}`);
+                const data = await response.json();
+                
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<div class="search-result-item">No students found</div>';
+                    return;
+                }
+
+                data.forEach(student => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.innerHTML = `
+                        <div class="student-info">
+                            <div class="student-name">${student.lastname}, ${student.firstname}</div>
+                            <div class="student-id">ID: ${student.idno}</div>
+                            <div class="student-course">Course: ${student.course} - Year ${student.year_level}</div>
+                        </div>
+                        <div class="student-actions">
+                            <button onclick="viewStudentRecords('${student.idno}')" class="action-btn view">
+                                <i class="fas fa-history"></i> View Records
+                            </button>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error searching students:', error);
+                alert('Error searching students. Please try again.');
+            }
+        }
+
+        function viewStudentRecords(idno) {
+            // Filter records by student ID
+            const records = document.querySelectorAll('.record-row');
+            records.forEach(row => {
+                const studentId = row.getAttribute('data-student');
+                if (studentId === idno) {
+                    row.classList.add('highlight');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    row.classList.remove('highlight');
+                }
+            });
+            toggleSearch();
+        }
+
+        // Search on enter key press
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchStudents();
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('searchModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 

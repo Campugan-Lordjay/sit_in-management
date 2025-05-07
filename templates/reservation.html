@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservation Form - UC Main Sit-In</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-reservation.css') }}">
+</head>
+<body>
+   <!-- Navbar -->
+<nav class="navbar">
+  <div class="logo-text">
+    UC Main Sit-In
+  </div>
+  <ul class="nav-links">
+    <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+    <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+    <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+    <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+    <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+    <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+    <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+  </ul>
+</nav>
+  <!-- Reservation Form -->
+  <div class="reservation-page">
+    <h2>Make a Reservation</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}-message">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form class="reservation-form" id="reservationForm" method="POST" action="{{ url_for('reservation') }}" onsubmit="submitForm(event)">
+      <label for="idno">ID Number</label>
+      <input type="text" id="idno" name="idno" placeholder="Enter your ID number" required>
+
+      <label for="date">Desired Date</label>
+      <input type="date" id="date" name="date" required>
+
+      <label for="time">Desired Time</label>
+      <select id="time" name="time" required>
+        <option value="">Select Time</option>
+        <option value="08:00">8:00 AM</option>
+        <option value="09:00">9:00 AM</option>
+        <option value="10:00">10:00 AM</option>
+        <option value="11:00">11:00 AM</option>
+        <option value="13:00">1:00 PM</option>
+        <option value="14:00">2:00 PM</option>
+        <option value="15:00">3:00 PM</option>
+        <option value="16:00">4:00 PM</option>
+      </select>
+
+      <label for="session_type">Computer Laboratory Room</label>
+      <select id="session_type" name="session_type" required>
+        <option value="">Select Laboratory Room</option>
+        <option value="524">Room 524</option>
+        <option value="526">Room 526</option>
+        <option value="530">Room 530</option>
+        <option value="544">Room 544</option>
+      </select>
+
+      <button type="submit" id="submitBtn">Submit Reservation</button>
+      
+      <!-- Add message container for feedback -->
+      <div id="messageContainer" style="margin-top: 15px; display: none;">
+        <p id="message"></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Initialize date handling
+    function initializeDatePicker() {
+      const dateInput = document.getElementById('date');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day
+      
+      // Format today's date
+      const todayStr = today.toISOString().split('T')[0];
+      
+      // Set minimum date to today
+      dateInput.min = todayStr;
+      
+      // Set maximum date to 7 days from today
+      const maxDate = new Date(today);
+      maxDate.setDate(today.getDate() + 7);
+      dateInput.max = maxDate.toISOString().split('T')[0];
+
+      // Set default value to today
+      dateInput.value = todayStr;
+
+      // Add change event listener
+      dateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        // If selected date is before today, reset to today
+        if (selectedDate < today) {
+          this.value = todayStr;
+          showMessage("Please select today or a future date", "error");
+        }
+        
+        // If selected date is weekend, show error
+        const dayOfWeek = selectedDate.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          this.value = todayStr;
+          showMessage("Please select a weekday (Monday to Friday)", "error");
+        }
+
+        // Update available time slots
+        updateTimeOptions();
+      });
+
+      // Initial update of time slots
+      updateTimeOptions();
+    }
+
+    // Update time slots based on selected date
+    function updateTimeOptions() {
+      const dateInput = document.getElementById('date');
+      const timeSelect = document.getElementById('time');
+      const selectedDate = new Date(dateInput.value);
+      const today = new Date();
+      const isToday = selectedDate.toDateString() === today.toDateString();
+      
+      // Reset all options
+      Array.from(timeSelect.options).forEach(option => {
+        if (option.value) {
+          option.disabled = false;
+        }
+      });
+
+      if (isToday) {
+        const currentHour = today.getHours();
+        Array.from(timeSelect.options).forEach(option => {
+          if (option.value) {
+            const optionHour = parseInt(option.value.split(':')[0]);
+            if (optionHour <= currentHour) {
+              option.disabled = true;
+            }
+          }
+        });
+
+        // If all options are disabled, show message
+        const allDisabled = Array.from(timeSelect.options).every(option => 
+          !option.value || option.disabled
+        );
+        
+        if (allDisabled) {
+          showMessage("No more available time slots for today. Please select another date.", "error");
+          timeSelect.value = "";
+        }
+      }
+    }
+
+    // Initialize date picker on page load
+    initializeDatePicker();
+
+    function validateForm() {
+      const idno = document.getElementById('idno').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const labRoom = document.getElementById('session_type').value;
+
+      // Only check if ID number is not empty
+      if (!idno.trim()) {
+        showMessage("Please enter your ID number", "error");
+        return false;
+      }
+
+      // Validate date
+      const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate < today) {
+        showMessage("Please select today or a future date", "error");
+        return false;
+      }
+
+      // Validate weekday
+      const dayOfWeek = selectedDate.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        showMessage("Please select a weekday (Monday to Friday)", "error");
+        return false;
+      }
+
+      // Validate time is selected
+      if (!time) {
+        showMessage("Please select a time", "error");
+        return false;
+      }
+
+      // Validate laboratory room is selected
+      if (!labRoom) {
+        showMessage("Please select a laboratory room", "error");
+        return false;
+      }
+
+      return true;
+    }
+
+    function showMessage(text, type) {
+      const messageContainer = document.getElementById('messageContainer');
+      const message = document.getElementById('message');
+      message.textContent = text;
+      message.className = type;
+      messageContainer.style.display = 'block';
+      messageContainer.className = type === 'error' ? 'error-message' : 'success-message';
+    }
+
+    async function submitForm(event) {
+      event.preventDefault();
+      
+      if (!validateForm()) {
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const messageContainer = document.getElementById('messageContainer');
+      
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        messageContainer.style.display = 'none';
+
+        const formData = new FormData(document.getElementById('reservationForm'));
+        const response = await fetch("{{ url_for('reservation') }}", {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage(result.message, 'success');
+          document.getElementById('reservationForm').reset();
+          initializeDatePicker();
+        } else {
+          showMessage(result.message || 'Failed to submit reservation. Please try again.', 'error');
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        showMessage('An error occurred while submitting the reservation. Please try again.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Reservation';
+      }
+    }
+  </script>
+
+  <style>
+    .error-message {
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    .success-message {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+
+    #submitBtn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    /* Add styles for disabled time slots */
+    select option:disabled {
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</body>
+</html>

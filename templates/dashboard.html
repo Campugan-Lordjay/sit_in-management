@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UC Main</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-dashboard.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-text">
+      UC Main Sit-In
+    </div>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+      <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+      <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+      <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+      <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+      <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+      <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+      <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="button-container">
+    <button class="feedback-btn" onclick="openFeedbackModal()">Submit Feedback</button>
+    <button class="announcements-btn" onclick="openAnnouncementsModal()">Announcements</button>
+    {% if session.get('role') == 'admin' %}
+    <a href="{{ url_for('feed_reports') }}" class="feedback-btn">View Feedback Reports</a>
+    {% endif %}
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeFeedbackModal()">&times;</span>
+      <h2>Submit Feedback</h2>
+      <form id="feedbackForm">
+        <div class="form-group">
+          <label for="feedback_message">Feedback Message</label>
+          <textarea id="feedback_message" name="feedback_message" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Feedback Category</label>
+          <select id="category" name="category" required>
+            <option value="">Select a category</option>
+            <option value="general">General Feedback</option>
+            <option value="sit-in">Sit-in Experience</option>
+            <option value="facilities">Laboratory Facilities</option>
+            <option value="staff">Staff and Support</option>
+            <option value="suggestion">Suggestions</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="rating">Rating</label>
+          <div class="rating-container">
+            <input type="radio" id="star5" name="rating" value="5" required>
+            <label for="star5" title="5 stars">★</label>
+            <input type="radio" id="star4" name="rating" value="4">
+            <label for="star4" title="4 stars">★</label>
+            <input type="radio" id="star3" name="rating" value="3">
+            <label for="star3" title="3 stars">★</label>
+            <input type="radio" id="star2" name="rating" value="2">
+            <label for="star2" title="2 stars">★</label>
+            <input type="radio" id="star1" name="rating" value="1">
+            <label for="star1" title="1 star">★</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="datetime">Date & Time</label>
+          <input type="text" id="datetime" name="datetime" readonly>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit Feedback</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Announcements Modal -->
+  <div id="announcementsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeAnnouncementsModal()">&times;</span>
+      <h2>Announcements</h2>
+      <div id="announcementsList">
+        <!-- Announcements will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Rules Sections Container -->
+    <div class="rules-container">
+      <!-- Sit-in Rules Section -->
+      <div class="rules-section">
+        <h3>Sit-in Rules and Regulations</h3>
+        <div class="rules-list">
+          <div class="rule-group">
+            <h4>General Rules</h4>
+            <ul>
+              <li>All sit-in students must obtain prior approval from the instructor before entering the lab.</li>
+              <li>Seats are prioritized for officially enrolled students. Sit-in students may use a seat only if available.</li>
+              <li>All laboratory rules and regulations must be strictly followed.</li>
+              <li>Sit-in students must not interfere with ongoing lessons or activities.</li>
+              <li>Internet access is permitted only for academic purposes. Unauthorized browsing is strictly prohibited.</li>
+              <li>Tampering with lab computers (e.g., installing software, modifying settings) is a serious violation.</li>
+              <li>Use of the lab is limited to the allowed sit-in duration. Exceeding time limits may result in disciplinary action.</li>
+              <li>Proper attire must be worn at all times. No inappropriate or distracting clothing is allowed.</li>
+              <li>Sit-in students must not engage in loud conversations or any behavior that disrupts the learning environment.</li>
+              <li>Lab equipment, including keyboards and mice, must be handled with care.</li>
+              <li>Any technical issues must be reported immediately to the instructor or lab assistant.</li>
+            </ul>
+          </div>
+
+          <div class="rule-group">
+            <h4>Responsibilities</h4>
+            <ul>
+              <li>Follow the lab instructor's guidance and instructions at all times.</li>
+              <li>Respect all students and faculty members inside the lab.</li>
+              <li>Keep the laboratory clean and organized.</li>
+              <li>Refrain from bringing in food, drinks, or any prohibited items.</li>
+            </ul>
+          </div>
+
+          <div class="rule-group">
+            <h4>Penalties for Violations</h4>
+            <ul class="penalties">
+              <li><strong>First Offense:</strong> Verbal warning from the instructor or lab personnel.</li>
+              <li><strong>Second Offense:</strong> Temporary suspension of sit-in privileges.</li>
+              <li><strong>Third Offense:</strong> Permanent ban from the lab and referral to the disciplinary office.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Laboratory Rules Section -->
+      <div class="rules-section">
+        <h3>Laboratory Rules and Regulations</h3>
+        <div class="rules-list">
+          <div class="rule-group">
+            <h4>General Rules</h4>
+            <ul>
+              <li>Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans and other personal pieces of equipment must be switched off.</li>
+              <li>Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.</li>
+              <li>Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of software are strictly prohibited.</li>
+              <li>Getting access to other websites not related to the course (especially pornographic and illicit sites) is strictly prohibited.</li>
+              <li>Deleting computer files and changing the set-up of the computer is a major offense.</li>
+              <li>Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".</li>
+              <li>Observe proper decorum while inside the laboratory.</li>
+            </ul>
+          </div>
+
+          <div class="rule-group">
+            <h4>Proper Laboratory Conduct</h4>
+            <ul>
+              <li>Do not get inside the lab unless the instructor is present.</li>
+              <li>All bags, knapsacks, and the likes must be deposited at the counter.</li>
+              <li>Follow the seating arrangement of your instructor.</li>
+              <li>At the end of class, all software programs must be closed.</li>
+              <li>Return all chairs to their proper places after using.</li>
+            </ul>
+          </div>
+
+          <div class="rule-group">
+            <h4>Prohibited Activities</h4>
+            <ul>
+              <li>Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.</li>
+              <li>Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the members of the community, including public display of physical intimacy, are not tolerated.</li>
+              <li>Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</li>
+              <li>For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.</li>
+              <li>Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.</li>
+            </ul>
+          </div>
+
+          <div class="rule-group">
+            <h4>Disciplinary Action</h4>
+            <ul class="penalties">
+              <li><strong>First Offense:</strong> The Head or the Dean or OIC recommends to the Guidance Center for a suspension from classes for each offender.</li>
+              <li><strong>Second and Subsequent Offenses:</strong> A recommendation for a heavier sanction will be endorsed to the Guidance Center.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Update datetime when opening feedback modal
+    function openFeedbackModal() {
+      document.getElementById('feedbackModal').style.display = 'block';
+      const now = new Date();
+      document.getElementById('datetime').value = now.toLocaleString();
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').style.display = 'none';
+    }
+
+    function closeAnnouncementsModal() {
+      document.getElementById('announcementsModal').style.display = 'none';
+    }
+
+    function openAnnouncementsModal() {
+      document.getElementById('announcementsModal').style.display = 'block';
+      // Load announcements here if needed
+    }
+
+    // Handle feedback form submission
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Get form data
+      const rating = document.querySelector('input[name="rating"]:checked')?.value;
+      const category = document.getElementById('category').value;
+      const feedback_message = document.getElementById('feedback_message').value;
+
+      // Validate form data
+      if (!rating || !category || !feedback_message) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      // Submit feedback
+      fetch('/submit-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rating: rating,
+          category: category,
+          feedback_message: feedback_message
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Feedback submitted successfully!');
+          closeFeedbackModal();
+          // Reset form
+          document.getElementById('feedbackForm').reset();
+        } else {
+          alert(data.message || 'Error submitting feedback');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting feedback');
+      });
+    });
+
+    // Load announcements when opening modal
+    document.getElementById('announcementsModal').addEventListener('show', async function() {
+      try {
+        const response = await fetch('/get-announcements');
+        const announcements = await response.json();
+        
+        const announcementsList = document.getElementById('announcementsList');
+        announcementsList.innerHTML = announcements.map(announcement => `
+          <div class="announcement">
+            <h3>${announcement.title}</h3>
+            <p>${announcement.content}</p>
+            <small>${new Date(announcement.created_at).toLocaleString()}</small>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading announcements:', error);
+      }
+    });
+  </script>
+</body>
+</html>

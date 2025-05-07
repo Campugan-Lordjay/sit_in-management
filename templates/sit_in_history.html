@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sit-In History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles-sit-in-history.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+   <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-text">
+      UC Main Sit-In
+    </div>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+      <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+      <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+      <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+      <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+      <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+      <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+      <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+  </nav>
+
+
+    <div class="main-content">
+        <div class="page-header">
+            <h2>Sit-In History</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="filter-section">
+                <input type="text" id="dateFilter" placeholder="Select Date" class="flatpickr" value="{{ current_date or '' }}">
+                <select id="statusFilter">
+                    <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="Pending" {% if current_status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Approved" {% if current_status == 'Approved' %}selected{% endif %}>Approved</option>
+                    <option value="Completed" {% if current_status == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Rejected" {% if current_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+                <button onclick="applyFilters()" class="filter-btn">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID Number</th>
+                        <th>Full Name</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Laboratory Room</th>
+                        <th>Programming Language</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    {% if record.status == 'Approved' %}
+                    <tr>
+                        <td>{{ record.idno }}</td>
+                        <td>{{ record.firstname }} {{ record.lastname }}</td>
+                        <td>{{ record.date }}</td>
+                        <td>{{ record.time }}</td>
+                        <td>{{ record.session_type }}</td>
+                        <td>{{ record.language }}</td>
+                        <td>
+                            <span class="status-badge approved">
+                                {{ record.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="action-btn report-btn" onclick="showReportModal('{{ record.id }}')">
+                                <i class="fas fa-file-alt"></i> Sit-in Report
+                            </button>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sit-in Report Modal -->
+        <div id="reportModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeReportModal()">&times;</span>
+                <h2>Submit Sit-in Report</h2>
+                <form id="sitInReportForm" onsubmit="submitReport(event)">
+                    <input type="hidden" id="reportRecordId" name="record_id">
+                    <div class="form-group">
+                        <label for="reportMessage">Report Message:</label>
+                        <textarea id="reportMessage" name="message" rows="4" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Submit Report</button>
+                        <button type="button" class="cancel-btn" onclick="closeReportModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if records %}
+        <div class="pagination">
+            {% if has_prev %}
+            <button onclick="changePage('1')" class="page-btn" title="First Page">
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button onclick="changePage('{{ page - 1 }}')" class="page-btn">
+                <i class="fas fa-angle-left"></i>
+            </button>
+            {% endif %}
+
+            {% set start = [page - 2, 1] | max %}
+            {% set end = [start + 4, total_pages + 1] | min %}
+            {% set start = [end - 4, 1] | max %}
+
+            {% for p in range(start, end) %}
+            <button onclick="changePage('{{ p }}')" 
+                    class="page-btn {% if p == page %}active{% endif %}">
+                {{ p }}
+            </button>
+            {% endfor %}
+
+            {% if has_next %}
+            <button onclick="changePage('{{ page + 1 }}')" class="page-btn">
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button onclick="changePage('{{ total_pages }}')" class="page-btn" title="Last Page">
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Initialize date picker
+        flatpickr("#dateFilter", {
+            dateFormat: "Y-m-d",
+            defaultDate: "{{ current_date or '' }}"
+        });
+
+        function applyFilters() {
+            const status = 'Approved'; // Always filter for approved status
+            const date = document.getElementById('dateFilter').value;
+            window.location.href = `{{ url_for('sit_in_history') }}?status=${status}&date=${date}`;
+        }
+
+        function changePage(page) {
+            const status = 'Approved'; // Always filter for approved status
+            const date = document.getElementById('dateFilter').value;
+            window.location.href = `{{ url_for('sit_in_history') }}?page=${page}&status=${status}&date=${date}`;
+        }
+
+        // Initialize with approved status
+        window.addEventListener('load', function() {
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.value = 'Approved';
+                statusFilter.disabled = true; // Disable status filter since we only show approved
+            }
+        });
+
+        function showReportModal(recordId) {
+            document.getElementById('reportRecordId').value = recordId;
+            document.getElementById('reportModal').style.display = 'block';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+            document.getElementById('sitInReportForm').reset();
+        }
+
+        function submitReport(event) {
+            event.preventDefault();
+            const form = document.getElementById('sitInReportForm');
+            const recordId = document.getElementById('reportRecordId').value;
+            const message = document.getElementById('reportMessage').value;
+
+            // Show loading state
+            const submitBtn = form.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+
+            fetch('/submit-sitin-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    record_id: recordId,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Report submitted successfully!');
+                    closeReportModal();
+                } else {
+                    alert(data.message || 'Error submitting report');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the report');
+            })
+            .finally(() => {
+                // Restore button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const reportModal = document.getElementById('reportModal');
+            if (event.target == reportModal) {
+                closeReportModal();
+            }
+        }
+
+        // Function to handle long report messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportCells = document.querySelectorAll('.data-table td:nth-child(5)');
+            reportCells.forEach(cell => {
+                cell.addEventListener('click', function() {
+                    if (this.style.whiteSpace === 'normal') {
+                        this.style.whiteSpace = 'nowrap';
+                    } else {
+                        this.style.whiteSpace = 'normal';
+                    }
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #66bb6a;
+        }
+        .no-records {
+            text-align: center;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .status-badge.pending {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+        .status-badge.approved {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-badge.completed {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        .status-badge.rejected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* Updated Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 5px;
+        }
+
+        .page-btn {
+            background-color: #f8f9fa;
+            color: #007bff;
+            border: 1px solid #dee2e6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .page-btn:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .page-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .fa-angle-left, .fa-angle-right,
+        .fa-angle-double-left, .fa-angle-double-right {
+            font-size: 14px;
+        }
+
+        .page-info {
+            padding: 8px 16px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            color: #495057;
+            margin: 0 10px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .start-btn:hover {
+            background-color: #45a049;
+        }
+
+        .start-btn i {
+            font-size: 12px;
+        }
+
+        .status-badge.approved {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .report-btn {
+            background-color: #2196F3;
+            color: white;
+            margin-left: 5px;
+        }
+
+        .report-btn:hover {
+            background-color: #1976D2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 10px;
+            top: 5px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        .cancel-btn:hover {
+            background-color: #da190b;
+        }
+
+        .filter-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-section input,
+        .filter-section select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-btn:hover {
+            background-color: #218838;
+        }
+
+        .filter-btn i {
+            font-size: 14px;
+        }
+
+        /* Reports Section Styling */
+        .reports-section {
+            margin-top: 40px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .reports-section h2 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        /* Table Styling */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .data-table td {
+            color: #555;
+        }
+
+        /* Report Message Styling */
+        .data-table td:nth-child(5) {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-table td:nth-child(5):hover {
+            white-space: normal;
+            overflow: visible;
+            cursor: pointer;
+        }
+
+        /* Modal Styling Updates */
+        .modal-content {
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 10px;
+        }
+
+        /* Status Badge Updates */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-badge.approved {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .reports-section {
+                margin-top: 20px;
+                padding: 15px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+
+            .data-table td:nth-child(5) {
+                max-width: 200px;
+            }
+        }
+    </style>
+</body>
+</html> 

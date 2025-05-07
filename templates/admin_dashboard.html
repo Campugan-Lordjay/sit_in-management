@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin-dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Search Modal Styles */
+        .search-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .search-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            background-color: #4e73df;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .search-container button:hover {
+            background-color: #2e59d9;
+        }
+
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-result-item:hover {
+            background-color: #f8f9fc;
+        }
+
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-text">UC Main Sit-In</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}" class="active"><i class="fas fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" onclick="toggleSearch()"><i class="fas fa-search"></i> Search</a>
+            </li>
+            <li><a href="{{ url_for('admin_students') }}"><i class="fas fa-users"></i> Students</a></li>
+            <li><a href="{{ url_for('admin_sitin') }}"><i class="fas fa-chair"></i> Sit-In</a></li>
+            <li><a href="{{ url_for('admin_sitin_records') }}"><i class="fas fa-history"></i> View Sit-in Records</a></li>
+            <li><a href="{{ url_for('admin_sitin_report') }}"><i class="fas fa-chart-bar"></i> Sit-in Report</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">More Options</span>
+            <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('upload_lab_schedule') }}" {% if request.endpoint == 'upload_lab_schedule' %}class="active"{% endif %}><i class="fas fa-upload"></i> Upload Lab Schedule</a></li>
+            <li><a href="{{ url_for('upload_resources') }}" {% if request.endpoint == 'upload_resources' %}class="active"{% endif %}><i class="fas fa-file-upload"></i> Upload Resources/Materials</a></li>
+            <li><a href="{{ url_for('feed_reports') }}" {% if request.endpoint == 'feed_reports' %}class="active"{% endif %}><i class="fas fa-comments"></i> Feedback Reports</a></li>
+            <li><a href="{{ url_for('admin_leaderboard') }}" {% if request.endpoint == 'admin_leaderboard' %}class="active"{% endif %}><i class="fas fa-trophy"></i> Leaderboard</a></li>
+        </ul>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="search-modal">
+        <div class="search-modal-content">
+            <span class="close" onclick="toggleSearch()">&times;</span>
+            <h2>Search Students</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search by name or ID...">
+                <button onclick="searchStudents()"><i class="fas fa-search"></i> Search</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Statistics Section -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>Total Students</h3>
+                <p>{{ total_users }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-user-check"></i>
+                <h3>Active Sit-ins</h3>
+                <p>{{ active_sitins }}</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-history"></i>
+                <h3>Total Sit-ins</h3>
+                <p>{{ total_sitins }}</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Sit-in Distribution</h3>
+                <canvas id="sitinChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Programming Languages</h3>
+                <canvas id="languageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Announcements Section -->
+        <div class="announcements-section">
+            <h3>Create Announcement</h3>
+            <form id="announcementForm" class="announcement-form">
+                <input type="text" placeholder="Title" id="announcementTitle" required>
+                <textarea placeholder="Content" id="announcementContent" required></textarea>
+                <button type="submit" class="post-btn">Post Announcement</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Toggle Search Modal
+        function toggleSearch() {
+            const modal = document.getElementById('searchModal');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            if (modal.style.display === 'block') {
+                document.getElementById('searchInput').focus();
+            }
+        }
+
+        // Toggle Dropdown
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            dropdown.classList.toggle('show');
+            
+            // Close other dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu.id !== id && menu.classList.contains('show')) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.matches('.dropdown a')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu.classList.contains('show')) {
+                        menu.classList.remove('show');
+                    }
+                });
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('searchModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Search functionality
+        async function searchStudents() {
+            const searchInput = document.getElementById('searchInput').value;
+            if (!searchInput.trim()) return;
+
+            try {
+                const response = await fetch(`/admin/search-students?query=${encodeURIComponent(searchInput)}`);
+                const data = await response.json();
+                
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<div class="search-result-item">No students found</div>';
+                    return;
+                }
+
+                data.forEach(student => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.innerHTML = `
+                        <strong>${student.lastname}, ${student.firstname}</strong><br>
+                        ID: ${student.idno}<br>
+                        Course: ${student.course} - Year ${student.year_level}
+                    `;
+                    div.onclick = () => window.location.href = `/admin/student/${student.idno}`;
+                    resultsContainer.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error searching students:', error);
+                alert('Error searching students. Please try again.');
+            }
+        }
+
+        // Search on enter key press
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchStudents();
+            }
+        });
+
+        // Initialize charts
+        window.onload = function() {
+            // Sit-in Distribution Chart
+            new Chart(document.getElementById('sitinChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lab Sessions', 'Sit-ins'],
+                    datasets: [{
+                        data: [40, 60],
+                        backgroundColor: ['#4e73df', '#1cc88a']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Programming Languages Chart
+            new Chart(document.getElementById('languageChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['C', 'C#', 'C++', 'JavaScript', 'Python', 'PHP'],
+                    datasets: [{
+                        label: 'Language Usage',
+                        data: [30, 25, 20, 35, 40, 15],
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc',
+                            '#f6c23e', '#e74a3b', '#858796'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        };
+
+        // Handle announcement form submission
+        document.getElementById('announcementForm').onsubmit = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('announcementTitle').value;
+            const content = document.getElementById('announcementContent').value;
+            
+            // Add your announcement submission logic here
+            console.log('Announcement:', { title, content });
+            
+            // Clear form
+            this.reset();
+            alert('Announcement posted successfully!');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sit-In Leaderboard - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin-leaderboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-text">UC Main Sit-In</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}" class="active"><i class="fas fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" onclick="toggleSearch()"><i class="fas fa-search"></i> Search</a>
+            </li>
+            <li><a href="{{ url_for('admin_students') }}"><i class="fas fa-users"></i> Students</a></li>
+            <li><a href="{{ url_for('admin_sitin') }}"><i class="fas fa-chair"></i> Sit-In</a></li>
+            <li><a href="{{ url_for('admin_sitin_records') }}"><i class="fas fa-history"></i> View Sit-in Records</a></li>
+            <li><a href="{{ url_for('admin_sitin_report') }}"><i class="fas fa-chart-bar"></i> Sit-in Report</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">More Options</span>
+            <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('upload_lab_schedule') }}" {% if request.endpoint == 'upload_lab_schedule' %}class="active"{% endif %}><i class="fas fa-upload"></i> Upload Lab Schedule</a></li>
+            <li><a href="{{ url_for('upload_resources') }}" {% if request.endpoint == 'upload_resources' %}class="active"{% endif %}><i class="fas fa-file-upload"></i> Upload Resources/Materials</a></li>
+            <li><a href="{{ url_for('feed_reports') }}" {% if request.endpoint == 'feed_reports' %}class="active"{% endif %}><i class="fas fa-comments"></i> Feedback Reports</a></li>
+            <li><a href="{{ url_for('admin_leaderboard') }}" {% if request.endpoint == 'admin_leaderboard' %}class="active"{% endif %}><i class="fas fa-trophy"></i> Leaderboard</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Sit-In Leaderboard</h1>
+            <div class="header-actions">
+                <a href="{{ url_for('export_leaderboard', course=current_course, year_level=current_year, period=current_period) }}" class="export-btn">
+                    <i class="fas fa-download"></i> Export Data
+                </a>
+            </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div class="achievements-section">
+            <h2>Top Achievements</h2>
+            <div class="achievement-cards">
+                <div class="achievement-card">
+                    <i class="fas fa-award"></i>
+                    <h3>Most Sessions</h3>
+                    <p class="achievement-value">{{ achievements.most_sessions.count }} sessions</p>
+                    <p class="achievement-holder">{{ achievements.most_sessions.student }}</p>
+                </div>
+                <div class="achievement-card">
+                    <i class="fas fa-star"></i>
+                    <h3>Highest Rated</h3>
+                    <p class="achievement-value">{{ achievements.highest_rated.rating }} / 5.0</p>
+                    <p class="achievement-holder">{{ achievements.highest_rated.student }}</p>
+                </div>
+                <div class="achievement-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Most Consistent</h3>
+                    <p class="achievement-value">{{ achievements.most_consistent.days }} days</p>
+                    <p class="achievement-holder">{{ achievements.most_consistent.student }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <form id="filterForm" method="GET" class="filters">
+                <select name="course" onchange="this.form.submit()">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course }}" {% if current_course == course %}selected{% endif %}>
+                        {{ course }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="year_level" onchange="this.form.submit()">
+                    <option value="">All Year Levels</option>
+                    {% for year in year_levels %}
+                    <option value="{{ year }}" {% if current_year == year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="period" onchange="this.form.submit()">
+                    <option value="all" {% if current_period == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="monthly" {% if current_period == 'monthly' %}selected{% endif %}>This Month</option>
+                    <option value="weekly" {% if current_period == 'weekly' %}selected{% endif %}>This Week</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Course Statistics -->
+        <div class="course-stats-section">
+            <h2>Course Statistics</h2>
+            <div class="course-stats-grid">
+                {% for stat in course_stats %}
+                <div class="course-stat-card">
+                    <h3>{{ stat[0] }}</h3>
+                    <div class="stat-details">
+                        <p><i class="fas fa-users"></i> {{ stat[1] }} students</p>
+                        <p><i class="fas fa-clock"></i> {{ stat[2] }} sessions</p>
+                        <p><i class="fas fa-star"></i> {{ "%.1f"|format(stat[3] or 0) }} avg rating</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div class="leaderboard-section">
+            <h2>Student Rankings</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Year</th>
+                            <th>Total Sessions</th>
+                            <th>Average Rating</th>
+                            <th>Active Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in leaderboard %}
+                        <tr>
+                            <td class="rank">{{ entry.rank }}</td>
+                            <td>
+                                <div class="student-info">
+                                    <span class="student-name">{{ entry.name }}</span>
+                                    <span class="student-id">{{ entry.idno }}</span>
+                                </div>
+                            </td>
+                            <td>{{ entry.course }}</td>
+                            <td>{{ entry.year_level }}</td>
+                            <td>{{ entry.total_sessions }}</td>
+                            <td>{{ entry.avg_rating }}</td>
+                            <td>{{ entry.unique_days }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                {% if has_prev %}
+                <a href="{{ url_for('admin_leaderboard', page=page-1, course=current_course, year_level=current_year, period=current_period) }}" class="page-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% endif %}
+                
+                <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+                
+                {% if has_next %}
+                <a href="{{ url_for('admin_leaderboard', page=page+1, course=current_course, year_level=current_year, period=current_period) }}" class="page-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar Toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        // Search Modal Toggle
+        function toggleSearch() {
+            const modal = document.getElementById('searchModal');
+            if (modal) {
+                modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources and Materials</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles-resources.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo-text">
+            UC Main Sit-In
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+            <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+            <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+            <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+            <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+            <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+            <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="resources-container">
+            <h2>Resources and Materials</h2>
+            
+            <div class="download-buttons-container">
+                <!-- PDF Files Button -->
+                <div class="download-section">
+                    <div class="file-icon pdf-icon">PDF</div>
+                    <h3>PDF Files</h3>
+                    <a href="{{ url_for('download_resource', type='pdf') }}" class="download-btn">
+                        <span class="download-icon">⬇</span>
+                        Download PDF Files
+                    </a>
+                </div>
+
+                <!-- Word Files Button -->
+                <div class="download-section">
+                    <div class="file-icon word-icon">DOC</div>
+                    <h3>Word Files</h3>
+                    <a href="{{ url_for('download_resource', type='doc') }}" class="download-btn">
+                        <span class="download-icon">⬇</span>
+                        Download Word Files
+                    </a>
+                </div>
+
+                <!-- Image Files Button -->
+                <div class="download-section">
+                    <div class="file-icon image-icon">IMG</div>
+                    <h3>Image Files</h3>
+                    <a href="{{ url_for('download_resource', type='image') }}" class="download-btn">
+                        <span class="download-icon">⬇</span>
+                        Download Image Files
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

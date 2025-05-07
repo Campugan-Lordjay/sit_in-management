@@ -1,0 +1,3 @@
+            <li><a href="{{ url_for('upload_lab_schedule') }}" {% if request.endpoint == 'upload_lab_schedule' %}class="active"{% endif %}><i class="fas fa-upload"></i> Upload Lab Schedule</a></li>
+            <li><a href="{{ url_for('upload_resources') }}" {% if request.endpoint == 'upload_resources' %}class="active"{% endif %}><i class="fas fa-file-upload"></i> Upload Resources/Materials</a></li>
+            <li><a href="{{ url_for('admin_leaderboard') }}" {% if request.endpoint == 'admin_leaderboard' %}class="active"{% endif %}><i class="fas fa-trophy"></i> Leaderboard</a></li> 

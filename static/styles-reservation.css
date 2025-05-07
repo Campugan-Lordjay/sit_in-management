@@ -1,0 +1,205 @@
+/* General Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: #f5f5f5;  /* Changed to match dashboard's light gray background */
+  color: #333; /* Dark text for better contrast */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Navbar Styling */
+.navbar {
+  display: flex; /* Use Flexbox for layout */
+  align-items: center; /* Vertically align items */
+  justify-content: space-between; /* Space between logo text and links */
+  background: #007bff;  /* Changed to match dashboard's blue navbar */
+  padding: 10px 20px; /* Add padding around the navbar */
+}
+
+/* Logo Text Styling */
+.logo-text {
+  font-size: 24px; /* Larger font size for emphasis */
+  font-weight: bold; /* Bold text for branding */
+  color: #fff; /* White text color */
+  text-transform: uppercase; /* Convert text to uppercase */
+  letter-spacing: 2px; /* Add spacing between letters for a modern look */
+  flex-shrink: 0; /* Prevent the text from shrinking */
+}
+
+/* Navigation Links Styling */
+.nav-links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  margin-left: 20px; /* Add spacing between links */
+}
+
+.nav-links li a {
+  color: #fff; /* White text color */
+  text-decoration: none;
+  font-size: 14px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.nav-links li a:hover {
+  background: #000000; /* Changed to match dashboard's black hover effect */
+  color: #fff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column; /* Stack items vertically on smaller screens */
+    align-items: flex-start; /* Align items to the start */
+  }
+
+  .nav-links {
+    flex-direction: column; /* Stack links vertically */
+    width: 100%; /* Full width for links */
+  }
+
+  .nav-links li {
+    margin-left: 0; /* Remove horizontal spacing */
+    margin-top: 10px; /* Add vertical spacing */
+  }
+}
+  
+/* Reservation Page Styling */
+.reservation-page {
+    max-width: 550px;
+    width: 95%;
+    margin: 1.2rem auto;
+    padding: 1.2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+}
+  
+.reservation-page h2 {
+    text-align: center;
+    margin-bottom: 1.2rem;
+    color: #222;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+}
+  
+.reservation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+  
+.reservation-form label {
+    font-weight: 600;
+    color: #222;
+    font-size: 14px;
+    margin-bottom: 0.2rem;
+    display: block;
+    letter-spacing: 0.3px;
+}
+  
+.reservation-form input,
+.reservation-form select,
+.reservation-form textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.2s;
+    color: #333;
+}
+  
+.reservation-form input:focus,
+.reservation-form select:focus,
+.reservation-form textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.07);
+}
+  
+.reservation-form input[readonly] {
+    background: #f8f9fa;
+    cursor: not-allowed;
+    color: #666;
+}
+  
+.reservation-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+  
+.reservation-form button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 0.4rem;
+    letter-spacing: 0.3px;
+}
+  
+.reservation-form button:hover {
+    background: #0069d9;
+}
+  
+/* Message Styling */
+.error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-bottom: 0.6rem;
+    padding: 0.25rem 0;
+    font-weight: 500;
+}
+  
+.success-message {
+    color: #28a745;
+    font-size: 13px;
+    margin-bottom: 0.6rem;
+    padding: 0.25rem 0;
+    font-weight: 500;
+}
+  
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+  
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+    }
+  
+    .nav-links li {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .reservation-page {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+}

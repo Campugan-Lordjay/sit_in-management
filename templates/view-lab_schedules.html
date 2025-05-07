@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Schedules</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles-view_lab_schedules.css') }}">
+</head>
+<body>
+     <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-text">UC Main Sit-In</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin_dashboard') }}" class="active"><i class="fas fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" onclick="toggleSearch()"><i class="fas fa-search"></i> Search</a>
+            </li>
+            <li><a href="{{ url_for('admin_students') }}"><i class="fas fa-users"></i> Students</a></li>
+            <li><a href="{{ url_for('admin_sitin') }}"><i class="fas fa-chair"></i> Sit-In</a></li>
+            <li><a href="{{ url_for('admin_sitin_records') }}"><i class="fas fa-history"></i> View Sit-in Records</a></li>
+            <li><a href="{{ url_for('admin_sitin_report') }}"><i class="fas fa-chart-bar"></i> Sit-in Report</a></li>
+            <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </nav>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="main-content">
+        <div class="header-section">
+            <h2>Lab Schedules</h2>
+            <button class="add-schedule-btn" onclick="openAddScheduleModal()">Add Schedule</button>
+        </div>
+
+        <div class="schedule-table-container">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>EDP Code</th>
+                        <th>Course</th>
+                        <th>Time</th>
+                        <th>Days</th>
+                        <th>Room</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if schedules %}
+                        {% for schedule in schedules %}
+                        <tr data-id="{{ schedule.id }}">
+                            <td>{{ schedule.edp_code }}</td>
+                            <td>{{ schedule.course }}</td>
+                            <td>{{ schedule.time }}</td>
+                            <td>{{ schedule.days }}</td>
+                            <td>{{ schedule.room }}</td>
+                            <td class="actions">
+                                <button class="edit-btn" onclick="editSchedule('{{ schedule.id }}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteSchedule('{{ schedule.id }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="no-data">No schedules available</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Schedule Modal -->
+    <div id="addScheduleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddScheduleModal()">&times;</span>
+            <h2>Add New Schedule</h2>
+            <form id="addScheduleForm" method="POST" action="{{ url_for('add_schedule') }}">
+                <div class="form-group">
+                    <label for="edp_code">EDP Code</label>
+                    <input type="text" id="edp_code" name="edp_code" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="course">Course</label>
+                    <input type="text" id="course" name="course" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="time">Time</label>
+                    <input type="text" id="time" name="time" placeholder="e.g., 8:00 AM - 9:30 AM" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="days">Days</label>
+                    <input type="text" id="days" name="days" placeholder="e.g., MWF" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="room">Room</label>
+                    <input type="text" id="room" name="room" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="submit-btn">Add Schedule</button>
+                    <button type="button" class="cancel-btn" onclick="closeAddScheduleModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddScheduleModal() {
+            document.getElementById('addScheduleModal').style.display = 'block';
+        }
+
+        function closeAddScheduleModal() {
+            document.getElementById('addScheduleModal').style.display = 'none';
+            document.getElementById('addScheduleForm').reset();
+        }
+
+        function editSchedule(id) {
+            // Get the schedule data from the table row
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            const edp_code = row.querySelector('td:nth-child(1)').textContent;
+            const course = row.querySelector('td:nth-child(2)').textContent;
+            const time = row.querySelector('td:nth-child(3)').textContent;
+            const days = row.querySelector('td:nth-child(4)').textContent;
+            const room = row.querySelector('td:nth-child(5)').textContent;
+
+            // Create and submit the edit form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/edit-schedule/${id}`;
+
+            const fields = {
+                edp_code: edp_code,
+                course: course,
+                time: time,
+                days: days,
+                room: room
+            };
+
+            for (const [key, value] of Object.entries(fields)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function deleteSchedule(id) {
+            if (confirm('Are you sure you want to delete this schedule?')) {
+                // Create and submit the delete form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/delete-schedule/${id}`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addScheduleModal');
+            if (event.target == modal) {
+                closeAddScheduleModal();
+            }
+        }
+
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(function() {
+            const alerts = document.getElementsByClassName('alert');
+            for (let alert of alerts) {
+                alert.style.display = 'none';
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

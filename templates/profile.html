@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - UC Main</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-dashboard.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-text">
+      UC Main Sit-In
+    </div>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+      <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+      <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+      <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+      <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+      <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+      <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+      <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+  </nav>
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Profile Information Section -->
+    <div class="profile-info">
+      <h3>Profile Information</h3>
+      <form class="profile-form" id="profileForm" method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data">
+        <!-- Profile Picture -->
+        <div class="profile-picture">
+          {% if user.profile_picture %}
+            <img src="{{ url_for('static', filename='profile_pictures/' + user.profile_picture) }}" alt="Profile Picture" class="profile-pic">
+          {% else %}
+            <img src="{{ url_for('static', filename='profile_pictures/default.jpg') }}" alt="Default Profile Picture" class="profile-pic">
+          {% endif %}
+          <input type="file" id="profilePicture" name="profilePicture" accept="image/*">
+        </div>
+
+        <div class="profile-grid">
+          <!-- Left Column -->
+          <div class="profile-column">
+            <div class="input-group">
+              <label for="idno"><strong>ID Number</strong></label>
+              <input type="text" id="idno" name="idno" value="{{ user.idno }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="course"><strong>Course</strong></label>
+              <input type="text" id="course" name="course" value="{{ user.course }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="email"><strong>Email Address</strong></label>
+              <input type="email" id="email" name="email" value="{{ user.email }}" readonly>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="profile-column">
+            <div class="input-group">
+              <label for="fullname"><strong>Full Name</strong></label>
+              <input type="text" id="fullname" name="fullname" value="{{ user.lastname }}, {{ user.firstname }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="year_level"><strong>Year Level</strong></label>
+              <input type="text" id="year_level" name="year_level" value="{{ user.year_level }}" readonly>
+            </div>
+
+            <div class="input-group">
+              <label for="session"><strong>Remaining Session</strong></label>
+              <input type="text" id="session" name="session" value="{{ user.session }}" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Button -->
+        <button type="button" id="editButton">Edit</button>
+
+        <!-- Save Changes Button -->
+        <button type="submit" id="saveButton" style="display: none;">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('editButton').addEventListener('click', function() {
+      // Enable editing for all input fields except ID Number
+      const inputs = document.querySelectorAll('#profileForm input');
+      inputs.forEach(input => {
+        if (input.name !== 'idno') { // Prevent editing of ID Number
+          input.removeAttribute('readonly');
+          input.style.backgroundColor = '#fff'; // Change background color to indicate edit mode
+        }
+      });
+
+      // Hide the "Edit" button and show the "Save Changes" button
+      document.getElementById('editButton').style.display = 'none';
+      document.getElementById('saveButton').style.display = 'block';
+    });
+
+    // Script to handle form submission
+    document.getElementById('profileForm').addEventListener('submit', function(event) {
+      // Combine Full Name into Last Name and First Name
+      const fullnameInput = document.getElementById('fullname');
+      const [lastname, firstname] = fullnameInput.value.split(',').map(part => part.trim());
+
+      // Add hidden inputs for lastname and firstname
+      const lastnameInput = document.createElement('input');
+      lastnameInput.type = 'hidden';
+      lastnameInput.name = 'lastname';
+      lastnameInput.value = lastname;
+
+      const firstnameInput = document.createElement('input');
+      firstnameInput.type = 'hidden';
+      firstnameInput.name = 'firstname';
+      firstnameInput.value = firstname;
+
+      // Append hidden inputs to the form
+      this.appendChild(lastnameInput);
+      this.appendChild(firstnameInput);
+    });
+
+    // Check for query parameters in the URL
+    const params = new URLSearchParams(window.location.search);
+    const successMessage = params.get('success');
+    const errorMessage = params.get('error');
+
+    if (successMessage) {
+      alert(successMessage); // Show success pop-up
+    }
+
+    if (errorMessage) {
+      alert(errorMessage); // Show error pop-up
+    }
+
+    function previewImage(event) {
+      const reader = new FileReader();
+      reader.onload = function() {
+        const output = document.querySelector('.profile-pic');
+        output.src = reader.result;
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  
+    // Attach the event listener to the file input
+    document.getElementById('profilePicture').addEventListener('change', previewImage);
+
+    // Add dropdown functionality
+    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+      toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        const dropdown = this.parentElement;
+        dropdown.classList.toggle('active');
+      });
+    });
+  </script>
+</body>
+</html>

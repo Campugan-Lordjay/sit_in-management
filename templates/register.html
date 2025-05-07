@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-register.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h2>Register</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages">
+          {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('register') }}" onsubmit="return validateForm()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="idno">ID Number</label>
+          <input type="text" id="idno" name="idno" placeholder="ID Number" required pattern="[0-9]+" title="Please enter a valid ID number">
+        </div>
+        <div class="form-group">
+          <label for="lastname">Last Name</label>
+          <input type="text" id="lastname" name="lastname" placeholder="Last Name" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstname">First Name</label>
+          <input type="text" id="firstname" name="firstname" placeholder="First Name" required>
+        </div>
+        <div class="form-group">
+          <label for="middlename">Middle Name</label>
+          <input type="text" id="middlename" name="middlename" placeholder="Middle Name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="course">Course</label>
+          <input type="text" id="course" name="course" placeholder="Course" required>
+        </div>
+        <div class="form-group">
+          <label for="year_level">Year Level</label>
+          <select id="year_level" name="year_level" required>
+            <option value="">Select Year Level</option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Email" required>
+        </div>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" placeholder="Username" required minlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
+        </div>
+      </div>
+      <button type="submit">Register</button>
+    </form>
+    <!-- Link to Login Page -->
+    <a href="{{ url_for('login') }}">Already have an account? Login</a>
+  </div>
+
+  <script>
+    function validateForm() {
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm_password').value;
+      const email = document.getElementById('email').value;
+      const idno = document.getElementById('idno').value;
+
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return false;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert("Please enter a valid email address!");
+        return false;
+      }
+
+      // Validate ID number (numeric only)
+      if (!/^\d+$/.test(idno)) {
+        alert("ID Number must contain only numbers!");
+        return false;
+      }
+
+      return true;
+    }
+  </script>
+</body>
+</html>

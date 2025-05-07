@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-login.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h2>Login</h2>
+
+    <!-- Pop-up Message -->
+    <div id="popup-message" class="popup-message" style="display: none;">
+      <div class="popup-content">
+        <p id="popup-text"></p>
+        <button id="close-popup">Close</button>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <form method="POST" action="{{ url_for('login') }}">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Register Link -->
+    {% set register_url = url_for('register') %}
+    <a href="{{ register_url }}">Don't have an account? Register</a>
+  </div>
+
+  <!-- Script for Handling Pop-up Messages -->
+  <script>
+      // Check for query parameters in the URL
+      const params = new URLSearchParams(window.location.search);
+    const successMessage = params.get('success');
+    const errorMessage = params.get('error');
+
+    // Function to show the pop-up message
+    function showPopup(message, type) {
+      const popup = document.getElementById('popup-message');
+      const popupText = document.getElementById('popup-text');
+
+      popup.style.display = 'flex'; // Show the pop-up
+      popupText.textContent = message;
+
+      // Add color based on message type
+      if (type === 'success') {
+        popup.style.backgroundColor = '#d4edda'; // Light green for success
+        popupText.style.color = '#155724';
+      } else if (type === 'error') {
+        popup.style.backgroundColor = '#f8d7da'; // Light red for error
+        popupText.style.color = '#721c24';
+      }
+
+      // Close button functionality
+      document.getElementById('close-popup').addEventListener('click', () => {
+        popup.style.display = 'none'; // Hide the pop-up
+      });
+    }
+
+    // Display pop-up if there are query parameters
+    if (successMessage) {
+      showPopup(successMessage, 'success');
+    }
+
+    if (errorMessage) {
+      showPopup(errorMessage, 'error');
+    }
+  </script>
+</body>
+</html>

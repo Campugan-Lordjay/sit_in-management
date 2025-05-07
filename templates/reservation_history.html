@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservation History - UC Main Sit-In</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles-reservation_history.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo-text">
+      UC Main Sit-In
+    </div>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+      <li><a href="{{ url_for('reservation') }}">Reservation</a></li>
+      <li><a href="{{ url_for('sit_in_history') }}">Sit-in History</a></li>
+      <li><a href="{{ url_for('reservation_history') }}">Reservation History</a></li>
+      <li><a href="{{ url_for('lab_history') }}">View Lab Schedule</a></li>
+      <li><a href="{{ url_for('resources') }}">View Resources/Materials</a></li>
+      <li><a href="{{ url_for('profile') }}">Profile Info</a></li>
+      <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h2>My Reservation History</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}-message">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <form id="filterForm" class="filter-form">
+        <div class="filter-group">
+          <label for="dateFilter">Filter by Date:</label>
+          <input type="date" id="dateFilter" name="date">
+        </div>
+        <div class="filter-group">
+          <label for="statusFilter">Filter by Status:</label>
+          <select id="statusFilter" name="status">
+            <option value="all">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <button type="submit">Apply Filters</button>
+        <button type="button" onclick="resetFilters()">Reset</button>
+      </form>
+    </div>
+  </div>
+
+    <div class="reservation-list">
+      <table>
+        <thead>
+          <tr>
+            <th>ID Number</th>
+            <th>Full Name</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Laboratory Room</th>
+            <th>Status</th>
+            <th>Created On</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if reservations %}
+            {% for reservation in reservations %}
+              <tr>
+                <td>{{ reservation.idno }}</td>
+                <td>{{ reservation.fullname }}</td>
+                <td>{{ reservation.date }}</td>
+                <td>{{ reservation.time }}</td>
+                <td>{{ reservation.session_type }}</td>
+                <td>
+                  <span class="status-badge {{ reservation.status.lower() }}">
+                    {{ reservation.status }}
+                  </span>
+                </td>
+                <td>{{ reservation.created_at }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="no-reservations">No reservations found.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  <script>
+    // Filter functionality
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const date = document.getElementById('dateFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      
+      // Reload page with filter parameters
+      const url = new URL(window.location.href);
+      if (date) url.searchParams.set('date', date);
+      if (status !== 'all') url.searchParams.set('status', status);
+      window.location.href = url.toString();
+    });
+
+    function resetFilters() {
+      window.location.href = window.location.pathname;
+    }
+
+    // Set filter values from URL parameters
+    window.addEventListener('load', function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('date')) {
+        document.getElementById('dateFilter').value = params.get('date');
+      }
+      if (params.has('status')) {
+        document.getElementById('statusFilter').value = params.get('status');
+      }
+    });
+  </script>
+</body>
+</html>
